@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="./resources/ol.css">
+        <link rel="stylesheet" href="resources/fontawesome-all.min.css">
+        <link href="resources/ol-geocoder.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="./resources/qgis2web.css">
+        <style>
+            html, body {
+                background-color: #ffffff;
+                width: 100%;
+                height: 100%;
+                padding: 0;
+                margin: 0;
+                display: flex;
+                overflow: hidden;
+            }
+            #sidebar {
+                width: 250px;
+                background: white;
+                padding: 10px;
+                border-right: 1px solid #ccc;
+                overflow-y: auto;
+                position: relative;
+                z-index: 1000;
+            }
+            #map {
+                flex: 1;
+                height: 100vh;
+            }
+            .layer-item {
+                display: flex;
+                align-items: center;
+                margin-bottom: 5px;
+            }
+            .layer-item input {
+                margin-right: 10px;
+            }
+            /* Right-side panel styles */
+            #info-panel {
+                width: 250px;
+                background: #f8f8f8;
+                padding: 20px;
+                border-left: 1px solid #ccc;
+                position: absolute;
+                right: 0;
+                top: 0;
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
+            }
+            #info-panel h3 {
+                margin-top: 0;
+                color: #333;
+            }
+            #info-panel p {
+                font-size: 14px;
+                color: #555;
+            }
+            #info-panel img {
+                width: 100%;
+                height: auto;
+                border: 1px solid #ccc;
+                margin-top: 10px;
+            }
+            /* Chat Box styles */
+            #chat-box {
+                flex-grow: 1;
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-end;
+                margin-bottom: 20px;  /* Add margin at the bottom */
+            }
+            #chat-messages {
+                max-height: 200px;
+                overflow-y: auto;
+                margin-bottom: 10px;
+                padding-right: 10px;
+            }
+            #chat-messages div {
+                margin-bottom: 5px;
+            }
+            /* New styles for aligning the chat input and send button */
+            #chat-input-container {
+                display: flex;
+                align-items: center;
+            }
+            #chat-input {
+                width: calc(100% - 90px); /* Adjust width to fit the button */
+                padding: 8px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+            }
+            #chat-send-btn {
+                width: 80px; /* Ensure the button has a fixed size */
+                padding: 8px 12px;
+                border: none;
+                background-color: #4CAF50;
+                color: white;
+                border-radius: 4px;
+                cursor: pointer;
+                margin-left: 10px; /* Space between input and button */
+            }
+            #chat-send-btn:hover {
+                background-color: #45a049;
+            }
+        </style>
+        <title>Sant Sarovar Barrage</title>
+        <!-- Include Firebase SDK -->
+        <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+
+        <script src="./resources/ol.js"></script>
+    </head>
+    <body>
+        <div id="sidebar">
+            <h3>Layer Control</h3>
+            <div id="layer-list"></div>
+        </div>
+        <div id="map">
+            <div id="popup" class="ol-popup">
+                <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+                <div id="popup-content"></div>
+            </div>
+        </div>
+
+        <!-- Right-side Information Panel -->
+        <div id="info-panel">
+            <h3>Atomep Enteam Pvt. Ltd.</h3>
+            <p>This is the information panel where details about the clicked map point will be displayed.</p>
+            <div id="info-content">
+                <p id="info-description">Click on a feature to see its details here.</p>
+                <img id="info-image" style="display:none;" alt="Feature Image">
+            </div>
+
+            <!-- Chat Box -->
+            <div id="chat-box">
+                <div id="chat-messages"></div>
+                <div id="chat-input-container">
+                    <input type="text" id="chat-input" placeholder="Type a message...">
+                    <button id="chat-send-btn">Send</button>
+                </div>
+            </div>
+        </div>
+        
+        <script src="resources/qgis2web_expressions.js"></script>
+        <script src="./resources/functions.js"></script>
+        <script src="resources/ol-geocoder.js"></script>
+        <script src="layers/SANSAROVARTODHAROISITECATCHMENT_UPDATED_1.js"></script>
+        <script src="layers/SAN_SAROVAR_SELECTED_DRAINAGELINE_1KM2_2.js"></script>
+        <script src="layers/santsarovarsite_3.js"></script>
+        <script src="styles/SANSAROVARTODHAROISITECATCHMENT_UPDATED_1_style.js"></script>
+        <script src="styles/SAN_SAROVAR_SELECTED_DRAINAGELINE_1KM2_2_style.js"></script>
+        <script src="styles/santsarovarsite_3_style.js"></script>
+        <script src="./layers/layers.js" type="text/javascript"></script> 
+        <script src="./resources/Autolinker.min.js"></script>
+        <script src="./resources/qgis2web.js"></script>
+        
+        <script>
+            // Firebase configuration
+            const firebaseConfig = {
+                apiKey: "YOUR_API_KEY",
+                authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+                databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
+                projectId: "YOUR_PROJECT_ID",
+                storageBucket: "YOUR_PROJECT_ID.appspot.com",
+                messagingSenderId: "YOUR_SENDER_ID",
+                appId: "YOUR_APP_ID"
+            };
+            
+            // Initialize Firebase
+            const app = firebase.initializeApp(firebaseConfig);
+            const database = firebase.database(app);
+            const chatRef = database.ref('chatMessages');
+
+            // Send a new message to Firebase
+            document.getElementById('chat-send-btn').addEventListener('click', function() {
+                const message = document.getElementById('chat-input').value;
+                if (message.trim() !== "") {
+                    chatRef.push().set({
+                        message: message,
+                        timestamp: Date.now()
+                    });
+                    document.getElementById('chat-input').value = ""; // Clear the input
+                }
+            });
+
+            // Listen for new messages and display them
+            chatRef.on('child_added', function(snapshot) {
+                const messageData = snapshot.val();
+                const messageDiv = document.createElement('div');
+                messageDiv.textContent = messageData.message;
+                document.getElementById('chat-messages').appendChild(messageDiv);
+                document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight; // Auto-scroll to the latest message
+            });
+        </script>
+    </body>
+</html>
